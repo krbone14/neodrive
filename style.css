@@ -1,0 +1,47 @@
+/* ============================================================
+   NÉODRIVE — style.css  (habillage synthwave spatial)
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #05010f;
+  color: #eafcff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#cadre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+#titre {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #00f0ff;
+  text-shadow: 0 0 8px #00f0ff, 0 0 20px rgba(0, 240, 255, 0.5);
+}
+
+#titre span {
+  color: #ff00c8;
+  text-shadow: 0 0 8px #ff00c8, 0 0 20px rgba(255, 0, 200, 0.5);
+  font-weight: 400;
+  letter-spacing: 2px;
+}
+
+#jeu {
+  display: block;
+  border: 1px solid rgba(160, 32, 240, 0.5);
+  border-radius: 4px;
+  box-shadow:
+    0 0 20px rgba(160, 32, 240, 0.4),
+    inset 0 0 60px rgba(5, 1, 15, 0.8);
+}
