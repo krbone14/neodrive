@@ -3,6 +3,8 @@
 Tower defense spatial **synthwave**, jouable directement dans le navigateur.
 HTML5 Canvas + JavaScript vanilla (modules ES6) — **aucune dépendance, aucun build**.
 
+![NÉODRIVE — Défense Orbitale](img/capture.jpg)
+
 ## 🎮 Jouer en ligne
 
 👉 **https://krbone14.github.io/neodrive/**
