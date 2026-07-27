@@ -2,15 +2,175 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>NÉODRIVE — Défense Orbitale</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      background: #05010f;
+      color: #eafcff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Champ d'étoiles en fond */
+    #etoiles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .accueil {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .titre {
+      font-size: clamp(40px, 12vw, 92px);
+      font-weight: 800;
+      letter-spacing: clamp(4px, 2vw, 12px);
+      color: #00f0ff;
+      text-shadow: 0 0 12px #00f0ff, 0 0 34px rgba(0, 240, 255, 0.6);
+      line-height: 1;
+    }
+    .sous-titre {
+      font-size: clamp(15px, 4.5vw, 26px);
+      letter-spacing: clamp(2px, 1.2vw, 6px);
+      color: #ff00c8;
+      text-shadow: 0 0 10px #ff00c8, 0 0 24px rgba(255, 0, 200, 0.5);
+      text-transform: uppercase;
+    }
+    .accroche {
+      font-size: clamp(13px, 3.6vw, 16px);
+      color: rgba(234, 252, 255, 0.7);
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .infos {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .chip {
+      border: 1px solid rgba(160, 32, 240, 0.7);
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: clamp(12px, 3.4vw, 14px);
+      background: rgba(160, 32, 240, 0.08);
+      box-shadow: 0 0 12px rgba(160, 32, 240, 0.3);
+      color: #eafcff;
+    }
+    .chip b { color: #a020f0; font-weight: 600; }
+
+    .commencer {
+      margin-top: 16px;
+      display: inline-block;
+      text-decoration: none;
+      color: #00f0ff;
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: 700;
+      letter-spacing: 3px;
+      padding: 16px 46px;
+      border: 2px solid #00f0ff;
+      border-radius: 10px;
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.5), inset 0 0 22px rgba(0, 240, 255, 0.12);
+      animation: pulse 1.6s ease-in-out infinite;
+      transition: transform 0.12s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+    .commencer:hover, .commencer:active {
+      background: rgba(0, 240, 255, 0.22);
+      transform: scale(1.04);
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 16px rgba(0, 240, 255, 0.45), inset 0 0 20px rgba(0, 240, 255, 0.1); }
+      50%      { box-shadow: 0 0 30px rgba(0, 240, 255, 0.85), inset 0 0 26px rgba(0, 240, 255, 0.2); }
+    }
+
+    .signature {
+      margin-top: 10px;
+      font-size: clamp(12px, 3.4vw, 15px);
+      color: rgba(234, 252, 255, 0.55);
+      letter-spacing: 1px;
+    }
+    .signature b {
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
-  <div id="cadre">
-    <h1 id="titre">NÉODRIVE <span>· Défense Orbitale</span></h1>
-    <canvas id="jeu"></canvas>
-  </div>
-  <script type="module" src="js/main.js"></script>
+  <canvas id="etoiles"></canvas>
+
+  <main class="accueil">
+    <h1 class="titre">NÉODRIVE</h1>
+    <div class="sous-titre">Défense Orbitale</div>
+    <p class="accroche">Tower defense spatial synthwave</p>
+
+    <div class="infos">
+      <span class="chip"><b>Langue :</b> Français 🇫🇷</span>
+      <span class="chip"><b>10 vagues</b> · 1 boss</span>
+    </div>
+
+    <a class="commencer" href="jeu.html">▶ COMMENCER</a>
+
+    <p class="signature">un jeu de <b>Florian Lorilloux</b></p>
+  </main>
+
+  <script>
+    // Champ d'étoiles en parallaxe (léger)
+    const cv = document.getElementById('etoiles');
+    const ctx = cv.getContext('2d');
+    let W, H, etoiles;
+    function resize() {
+      W = cv.width = window.innerWidth;
+      H = cv.height = window.innerHeight;
+      const n = Math.min(180, Math.floor(W * H / 8000));
+      etoiles = [];
+      for (let i = 0; i < n; i++) {
+        etoiles.push({
+          x: Math.random() * W, y: Math.random() * H,
+          r: Math.random() * 1.6 + 0.3,
+          v: Math.random() * 14 + 4,
+          a: Math.random() * 0.6 + 0.3,
+        });
+      }
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    let dernier = performance.now();
+    function boucle(t) {
+      const dt = (t - dernier) / 1000; dernier = t;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#eafcff';
+      for (const e of etoiles) {
+        e.x -= e.v * dt;
+        if (e.x < -2) { e.x = W + 2; e.y = Math.random() * H; }
+        ctx.globalAlpha = e.a;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(boucle);
+    }
+    requestAnimationFrame(boucle);
+  </script>
 </body>
 </html>
