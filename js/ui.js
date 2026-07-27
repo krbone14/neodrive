@@ -5,6 +5,7 @@
 import { PALETTE, LARGEUR, HAUTEUR, ECONOMIE, VAGUES } from '../config.js';
 import { ETAT } from './etat.js';
 import { tempsAvantVague, reinitialiserPartie, lancerVagueImmediat } from './vagues.js';
+import { basculerMuet, estMuet } from './musique.js';
 
 // ----- HUD néon : pods d'état + bouton de vague ----------------
 export function dessinerHUD(ctx) {
@@ -19,6 +20,52 @@ export function dessinerHUD(ctx) {
 
   const t = tempsAvantVague();
   if (t !== null && ETAT.statut === 'enCours') dessinerBoutonVague(ctx, t);
+
+  dessinerBoutonSon(ctx);
+}
+
+// ----- Bouton muet/son (coin bas-droit) ------------------------
+function boutonSonRect() {
+  return { x: LARGEUR - 44, y: HAUTEUR - 44, w: 32, h: 32 };
+}
+export function clicSon(x, y) {
+  const b = boutonSonRect();
+  if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+    basculerMuet();
+    return true;
+  }
+  return false;
+}
+function dessinerBoutonSon(ctx) {
+  const b = boutonSonRect();
+  const off = estMuet();
+  const col = off ? 'rgba(234, 252, 255, 0.4)' : PALETTE.cyan;
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(b.x, b.y, b.w, b.h, 7);
+  ctx.fillStyle = 'rgba(5, 1, 15, 0.7)';
+  ctx.fill();
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = off ? 'transparent' : PALETTE.cyan;
+  ctx.shadowBlur = off ? 0 : 8;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = col;
+  ctx.font = 'bold 16px Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('♪', b.x + b.w / 2, b.y + b.h / 2 + 1);
+  if (off) {
+    ctx.strokeStyle = '#ff3b6b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(b.x + 6, b.y + 6);
+    ctx.lineTo(b.x + b.w - 6, b.y + b.h - 6);
+    ctx.stroke();
+  }
+  ctx.textAlign = 'left';
+  ctx.restore();
 }
 
 function pod(ctx, x, y, w, h, couleur, icone, val, frac) {

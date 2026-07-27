@@ -10,7 +10,8 @@ import {
   ameliorerSelectionnee, vendreSelectionnee, clicPanneauAmelioration,
 } from './tours.js';
 import { reinitialiserPartie, lancerVagueImmediat } from './vagues.js';
-import { clicRejouer, clicLancerVague } from './ui.js';
+import { clicRejouer, clicLancerVague, clicSon } from './ui.js';
+import { demarrerMusique, basculerMuet } from './musique.js';
 
 function init() {
   const canvas = document.getElementById('jeu');
@@ -36,6 +37,7 @@ function positionSouris(canvas, e) {
 
 // Traite un appui / clic aux coordonnées canvas données
 function gererClic(x, y) {
+  if (clicSon(x, y)) return;                                      // bouton muet
   if (clicRejouer(x, y)) return;                                  // écran de fin
   if (clicLancerVague(x, y)) return;                              // bouton de vague
   if (clicSelecteur(x, y)) { definirSurvol(null, null); return; } // sélecteur de type
@@ -55,6 +57,7 @@ function brancherSaisie(canvas) {
   canvas.addEventListener('pointerleave', () => definirSurvol(null, null));
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
+    demarrerMusique();         // démarre l'ambiance au 1er contact (autoplay)
     const p = positionSouris(canvas, e);
     definirSurvol(p.x, p.y);   // vise la case sous le doigt/curseur
     gererClic(p.x, p.y);
@@ -63,7 +66,9 @@ function brancherSaisie(canvas) {
 
   // Clavier : 1/2/3 = type · A = améliorer · Espace = lancer la vague · R = rejouer
   window.addEventListener('keydown', e => {
-    if (e.key === '1') selectionner('laser');
+    demarrerMusique();         // démarre l'ambiance au 1er appui clavier
+    if (e.key === 'm' || e.key === 'M') basculerMuet();
+    else if (e.key === '1') selectionner('laser');
     else if (e.key === '2') selectionner('gravite');
     else if (e.key === '3') selectionner('plasma');
     else if (e.key === 'a' || e.key === 'A') ameliorerSelectionnee();
