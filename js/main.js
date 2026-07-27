@@ -34,24 +34,32 @@ function positionSouris(canvas, e) {
   };
 }
 
+// Traite un appui / clic aux coordonnées canvas données
+function gererClic(x, y) {
+  if (clicRejouer(x, y)) return;                                  // écran de fin
+  if (clicLancerVague(x, y)) return;                              // bouton de vague
+  if (clicSelecteur(x, y)) { definirSurvol(null, null); return; } // sélecteur de type
+  if (clicPanneauAmelioration(x, y)) return;                      // Améliorer / Détruire
+  const t = tourAuPoint(x, y);
+  if (t) { selectionnerTour(t); definirSurvol(null, null); return; } // sélectionne une tour
+  deselectionnerTour();
+  poserSurvol();                                                  // pose sur la case survolée
+}
+
 function brancherSaisie(canvas) {
-  canvas.addEventListener('mousemove', e => {
+  // Événements pointeur : fonctionnent à la souris ET au toucher
+  canvas.addEventListener('pointermove', e => {
     const p = positionSouris(canvas, e);
     definirSurvol(p.x, p.y);
   });
-  canvas.addEventListener('mouseleave', () => definirSurvol(null, null));
-  canvas.addEventListener('click', e => {
+  canvas.addEventListener('pointerleave', () => definirSurvol(null, null));
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault();
     const p = positionSouris(canvas, e);
-    if (clicRejouer(p.x, p.y)) return;                                        // écran de fin
-    if (clicLancerVague(p.x, p.y)) return;                                    // bouton de vague
-    if (clicSelecteur(p.x, p.y)) { definirSurvol(null, null); return; }       // sélecteur de type
-    if (clicPanneauAmelioration(p.x, p.y)) return;                            // bouton Améliorer
-    const t = tourAuPoint(p.x, p.y);
-    if (t) { selectionnerTour(t); definirSurvol(null, null); return; }        // sélectionne une tour
-    deselectionnerTour();                                                     // pose ailleurs
-    definirSurvol(p.x, p.y);
-    poserSurvol();
+    definirSurvol(p.x, p.y);   // vise la case sous le doigt/curseur
+    gererClic(p.x, p.y);
   });
+  canvas.addEventListener('contextmenu', e => e.preventDefault()); // pas de menu au appui long
 
   // Clavier : 1/2/3 = type · A = améliorer · Espace = lancer la vague · R = rejouer
   window.addEventListener('keydown', e => {
