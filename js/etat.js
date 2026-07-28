@@ -3,6 +3,7 @@
 //  (module partagé, sans dépendance de jeu → pas d'import circulaire)
 // ============================================================
 import { ECONOMIE } from '../config.js';
+import { sfxExplosion, sfxDefaite, sfxVictoire } from './musique.js';
 
 const CLE_MEILLEURE = 'neodrive.meilleureVague';
 
@@ -13,6 +14,7 @@ export const ETAT = {
   statut: 'enCours',      // 'enCours' | 'victoire' | 'defaite'
   meilleureVague: 0,
   tempsFin: null,         // horodatage (ms) de fin de partie, pour les animations
+  pause: false,           // jeu en pause
 };
 
 export function initEtat() {
@@ -21,7 +23,15 @@ export function initEtat() {
   ETAT.vague = 0;
   ETAT.statut = 'enCours';
   ETAT.tempsFin = null;
+  ETAT.pause = false;
   ETAT.meilleureVague = chargerMeilleure();
+}
+
+// Bascule la pause (uniquement pendant la partie)
+export function basculerPause() {
+  if (ETAT.statut !== 'enCours') return false;
+  ETAT.pause = !ETAT.pause;
+  return ETAT.pause;
 }
 
 // ----- Argent ₿ ---------------------------------------------
@@ -44,6 +54,8 @@ export function perdreVie(n) {
     ETAT.vies = 0;
     ETAT.statut = 'defaite';
     ETAT.tempsFin = performance.now();
+    sfxExplosion();   // la planète explose
+    sfxDefaite();
     enregistrerMeilleure();
   }
 }
@@ -59,6 +71,7 @@ export function marquerVague(v) {
 export function victoire() {
   ETAT.statut = 'victoire';
   ETAT.tempsFin = performance.now();
+  sfxVictoire();
   enregistrerMeilleure();
 }
 

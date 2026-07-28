@@ -7,6 +7,7 @@ import { BOSS as CFG, PALETTE, LARGEUR, HAUTEUR } from '../config.js';
 import { CHEMIN, CENTRE_TROU } from './carte.js';
 import { ajouterEnnemi, creerEnnemi } from './ennemis.js';
 import { ETAT } from './etat.js';
+import { sfxExplosion } from './musique.js';
 
 let bossActuel = null;
 let tempsEntree = 0;             // cinématique d'entrée (zoom + tremblement)
@@ -90,6 +91,8 @@ export function majBoss(dt) {
 function demarrerExplosion() {
   enExplosion = true;
   tempsExplosion = 0;
+  sfxExplosion();
+
   const couleurs = [PALETTE.cyan, PALETTE.magenta, PALETTE.or, PALETTE.cyan, PALETTE.magenta, PALETTE.or];
   explosions = couleurs.map((c, i) => ({
     retard: i * 0.22, t: 0, duree: 0.75,

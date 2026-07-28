@@ -52,7 +52,8 @@ function boucle(temps) {
 
 // Mise à jour de l'état du jeu (gelée quand la partie est finie)
 function majEtat(dt) {
-  majEtoiles(dt);
+  majEtoiles(dt);            // le fond continue de vivre même en pause
+  if (ETAT.pause) return;    // gel complet du jeu
   majBoss(dt);       // continue l'animation d'explosion même après la victoire
   if (ETAT.statut !== 'enCours') return;
   majVagues(dt);     // apparition des ennemis selon la vague

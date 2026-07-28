@@ -10,8 +10,9 @@ import {
   ameliorerSelectionnee, vendreSelectionnee, clicPanneauAmelioration,
 } from './tours.js';
 import { reinitialiserPartie, lancerVagueImmediat } from './vagues.js';
-import { clicRejouer, clicLancerVague, clicSon } from './ui.js';
-import { demarrerMusique, basculerMuet } from './musique.js';
+import { clicRejouer, clicLancerVague, clicSon, clicPause, clicMenu } from './ui.js';
+import { ETAT, basculerPause } from './etat.js';
+import { demarrerMusiqueJeu, basculerMuet } from './musique.js';
 
 function init() {
   const canvas = document.getElementById('jeu');
@@ -37,7 +38,10 @@ function positionSouris(canvas, e) {
 
 // Traite un appui / clic aux coordonnées canvas données
 function gererClic(x, y) {
+  if (clicMenu(x, y)) return;                                     // retour au menu
+  if (clicPause(x, y)) return;                                    // pause
   if (clicSon(x, y)) return;                                      // bouton muet
+  if (ETAT.pause) return;                                         // jeu gelé : rien d'autre
   if (clicRejouer(x, y)) return;                                  // écran de fin
   if (clicLancerVague(x, y)) return;                              // bouton de vague
   if (clicSelecteur(x, y)) { definirSurvol(null, null); return; } // sélecteur de type
@@ -57,7 +61,7 @@ function brancherSaisie(canvas) {
   canvas.addEventListener('pointerleave', () => definirSurvol(null, null));
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
-    demarrerMusique();         // démarre l'ambiance au 1er contact (autoplay)
+    demarrerMusiqueJeu();      // démarre la musique du jeu au 1er contact (autoplay)
     const p = positionSouris(canvas, e);
     definirSurvol(p.x, p.y);   // vise la case sous le doigt/curseur
     gererClic(p.x, p.y);
@@ -66,8 +70,10 @@ function brancherSaisie(canvas) {
 
   // Clavier : 1/2/3 = type · A = améliorer · Espace = lancer la vague · R = rejouer
   window.addEventListener('keydown', e => {
-    demarrerMusique();         // démarre l'ambiance au 1er appui clavier
+    demarrerMusiqueJeu();      // démarre la musique du jeu au 1er appui clavier
     if (e.key === 'm' || e.key === 'M') basculerMuet();
+    else if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') basculerPause();
+    else if (ETAT.pause) return;   // jeu en pause : on ignore le reste
     else if (e.key === '1') selectionner('laser');
     else if (e.key === '2') selectionner('gravite');
     else if (e.key === '3') selectionner('plasma');

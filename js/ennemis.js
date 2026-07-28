@@ -4,6 +4,7 @@
 import { ENNEMIS as CFG } from '../config.js';
 import { CHEMIN, CENTRE_TROU } from './carte.js';
 import { gagnerBtc, perdreVie } from './etat.js';
+import { sfxSpawn, sfxMort, sfxFissure } from './musique.js';
 
 // Liste des ennemis actifs (module = source unique)
 let ennemis = [];
@@ -36,6 +37,7 @@ export function creerEnnemi(type) {
     tue: false,               // détruit par une tourelle (gain ₿ → étape 5)
   };
   ennemis.push(e);
+  sfxSpawn();                     // son de sortie du vortex
   return e;
 }
 
@@ -43,7 +45,7 @@ export function creerEnnemi(type) {
 export function majEnnemis(dt) {
   for (const e of ennemis) {
     if (e.vivant) deplacer(e, dt);
-    if (e.arrive) perdreVie(e.def.degatsBase || 1);   // a atteint la planète → perte d'intégrité
+    if (e.arrive) { perdreVie(e.def.degatsBase || 1); sfxFissure(); }   // fissure la planète
     e.ralenti = 1;                // réinitialisé chaque frame (réappliqué par les tours)
   }
   // Retire les ennemis morts ou arrivés
@@ -72,6 +74,7 @@ export function infligerDegats(e, degats) {
     e.vivant = false;
     e.tue = true;
     gagnerBtc(e.def.gain);   // récompense ₿
+    if (!e.estBoss) sfxMort();   // le boss a sa propre explosion
   }
 }
 

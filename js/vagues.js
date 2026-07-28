@@ -30,14 +30,24 @@ export function reinitialiserPartie() {
   initVagues();
 }
 
-// Temps restant avant la prochaine vague (null si une vague est en cours)
+// Une vague est-elle en attente de lancement ?
+export function enAttenteVague() {
+  return entreVagues;
+}
+// La toute première vague (lancement manuel obligatoire) ?
+export function estPremiereVague() {
+  return entreVagues && ETAT.vague === 0;
+}
+// Compte à rebours avant la prochaine vague (null : 1re vague ou vague en cours)
 export function tempsAvantVague() {
-  return entreVagues ? Math.max(0, compteur) : null;
+  return (entreVagues && ETAT.vague > 0) ? Math.max(0, compteur) : null;
 }
 
-// Lance tout de suite la vague en attente (bouton / touche Espace)
+// Lance la vague en attente (bouton / touche Espace)
 export function lancerVagueImmediat() {
-  if (entreVagues && ETAT.statut === 'enCours') compteur = 0;
+  if (!entreVagues || ETAT.statut !== 'enCours') return;
+  if (ETAT.vague === 0) lancerVague();   // 1re vague : lancement direct
+  else compteur = 0;                     // suivantes : termine le compte à rebours
 }
 
 // ----- Mise à jour ------------------------------------------
@@ -45,9 +55,11 @@ export function majVagues(dt) {
   if (ETAT.statut !== 'enCours') return;
 
   if (entreVagues) {
-    compteur -= dt;
-    if (compteur <= 0) lancerVague();
-    return;
+    if (ETAT.vague > 0) {                 // vagues 2+ : compte à rebours automatique
+      compteur -= dt;
+      if (compteur <= 0) lancerVague();
+    }
+    return;                               // 1re vague : on attend le joueur
   }
 
   // Apparitions échelonnées

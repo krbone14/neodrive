@@ -6,6 +6,7 @@ import { TOURELLES as CFG, PALETTE, GRILLE, HAUTEUR } from '../config.js';
 import { caseConstructible, centreBloc, blocPlacable } from './carte.js';
 import { listeEnnemis, infligerDegats } from './ennemis.js';
 import { peutPayer, depenser, gagnerBtc } from './etat.js';
+import { sfxTir, sfxPose, sfxClic, sfxAmelioration, sfxPoubelle } from './musique.js';
 
 let tours = [];
 let projectiles = [];      // tirs de plasma en vol
@@ -24,7 +25,7 @@ export function reinitTours() {
 
 // ----- Sélection & placement --------------------------------
 export function selectionner(type) {
-  if (CFG[type]) { typeSelection = type; tourSelectionnee = null; }
+  if (CFG[type]) { typeSelection = type; tourSelectionnee = null; sfxClic(); }
 }
 export function typeSelectionne() {
   return typeSelection;
@@ -47,6 +48,7 @@ export function poser(col, rang) {
     angle: 0,          // orientation du canon (laser / plasma)
     angleVisuel: 0,    // rotation décorative (gravité)
   });
+  sfxPose();
   return true;
 }
 
@@ -58,7 +60,7 @@ export function tourAuPoint(x, y) {
   }
   return null;
 }
-export function selectionnerTour(t) { tourSelectionnee = t; }
+export function selectionnerTour(t) { tourSelectionnee = t; sfxClic(); }
 export function deselectionnerTour() { tourSelectionnee = null; }
 
 // Améliore la tour sélectionnée (coût ₿ appliqué à l'étape 5)
@@ -68,6 +70,7 @@ export function ameliorerSelectionnee() {
   if (!depenser(t.def.niveaux[t.niveau].cout)) return false;   // coût d'amélioration ₿
   t.niveau++;
   t.stats = t.def.niveaux[t.niveau - 1];
+  sfxAmelioration();
   return true;
 }
 
@@ -89,6 +92,7 @@ export function vendreSelectionnee() {
   gagnerBtc(valeurRevente(t));
   tours = tours.filter(x => x !== t);
   tourSelectionnee = null;
+  sfxPoubelle();
   return true;
 }
 
@@ -365,6 +369,7 @@ function meilleureCible(cibles) {
 }
 
 function tirer(t, cible) {
+  sfxTir();
   if (t.type === 'laser') {
     // Dégâts directs instantanés + rayon visuel
     infligerDegats(cible, t.stats.degats);

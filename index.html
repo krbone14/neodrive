@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>NÉODRIVE — Défense Orbitale</title>
+  <title>NEODRIVE — Défense Orbitale</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
@@ -155,7 +155,7 @@
   <button id="son" class="son" title="Son">♪</button>
 
   <main class="accueil">
-    <h1 class="titre">NÉODRIVE</h1>
+    <h1 class="titre">NEODRIVE</h1>
     <div class="sous-titre">Défense Orbitale</div>
     <p class="accroche">Tower defense spatial synthwave</p>
 
@@ -210,16 +210,16 @@
   </script>
 
   <script type="module">
-    import { demarrerMusique, basculerMuet, estMuet } from './js/musique.js';
+    import { demarrerMusiqueMenu, basculerMuet, estMuet } from './js/musique.js';
     const btn = document.getElementById('son');
     // Démarre l'ambiance dès la première interaction (règle d'autoplay)
-    function demarrer() { demarrerMusique(); }
+    function demarrer() { demarrerMusiqueMenu(); }
     window.addEventListener('pointerdown', demarrer, { once: true });
     window.addEventListener('keydown', demarrer, { once: true });
     // Bouton muet
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      demarrerMusique();
+      demarrerMusiqueMenu();
       const m = basculerMuet();
       btn.classList.toggle('muet', m);
       btn.textContent = m ? '♪̷' : '♪';
