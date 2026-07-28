@@ -41,6 +41,9 @@ export function estMuet() { return muet; }
 export function basculerMuet() {
   muet = !muet;
   if (master) master.gain.setTargetAtTime(muet ? 0 : 1, ac.currentTime, 0.04);
+  if (muet && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+  }
   return muet;
 }
 
@@ -57,11 +60,12 @@ function demarrer(nom) {
   arreterMusique();
   piste = nom;
   bpm = nom === 'menu' ? 120 : 126;
-  gMus.gain.setTargetAtTime(nom === 'menu' ? 0.28 : 0.27, ac.currentTime, 0.1);
-  if (nom === 'menu') introMenu(); else setupJeu();
+  gMus.gain.setTargetAtTime(0.27, ac.currentTime, 0.1);
+  setupJeu();                       // même musique house pour le menu et le jeu
+  if (nom === 'menu') introMenu();  // + intro (impact, montée, vraie voix)
   running = true;
-  // la boucle du menu démarre APRÈS la voix (pour bien l'entendre), le jeu tout de suite
-  nextT = ac.currentTime + (nom === 'menu' ? 3.9 : 0.12); step = 0;
+  // au menu, la boucle démarre après l'intro parlée ; en jeu, tout de suite
+  nextT = ac.currentTime + (nom === 'menu' ? 2.4 : 0.12); step = 0;
   planifier();
 }
 
@@ -76,37 +80,19 @@ function planifier() {
   if (!running) return;
   const dur = (60 / bpm) / 4;   // durée d'une double-croche
   while (nextT < ac.currentTime + 0.12) {
-    (piste === 'menu' ? pasMenu : pasJeu)(step, nextT, dur);
+    pasJeu(step, nextT, dur);
     nextT += dur; step = (step + 1) % 16;
   }
   timer = setTimeout(planifier, 25);
 }
 
-// ----- Menu : intro électro + boucle entraînante + voix « NEODRIVE » -----
-const BASS_MENU = [43, 43, null, 43, 46, null, 43, null, 41, 41, null, 41, 48, null, 45, null];
-const LEAD_MENU = [67, null, 70, 74, null, 70, 67, 65, null, 67, 70, 72, 74, null, 70, 67];
-function pasMenu(s, t, dur) {
-  if (s % 4 === 0) kick(t);
-  if (s % 2 === 0) hat(t, s % 8 === 4 ? 0.06 : 0.028);
-  const b = BASS_MENU[s]; if (b != null) bassJeu(freq(b), t, dur * 1.7);
-  const l = LEAD_MENU[s]; if (l != null) leadJeu(freq(l), t);
-}
-
-// Séquence d'ouverture : impact + montée + voix, puis nappe continue
+// ----- Intro du menu : impact + montée + vraie voix « NEODRIVE » -----
 function introMenu() {
   const t = ac.currentTime + 0.05;
   kick(t);
   souffle(0.5, 'lowpass', 1600, 0.5, t);        // impact
-  riser(t, 1.2);                                 // montée
-  voixNeodrive(t + 1.0);                          // « NEODRIVE » au sommet
-  // Nappe continue (la mineur) sous la boucle
-  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1100;
-  const g = ac.createGain(); g.gain.value = 0.05; lp.connect(g); g.connect(gMus);
-  [43, 50, 55].forEach((m, i) => {
-    const o = ac.createOscillator(); o.type = 'sawtooth';
-    o.frequency.value = freq(m); o.detune.value = (i - 1) * 5;
-    o.connect(lp); o.start(); continus.push(o);
-  });
+  riser(t, 1.6);                                 // montée
+  parlerNeodrive();                              // vraie voix (synthèse vocale du navigateur)
 }
 
 // Montée de tension (bruit filtré + ton ascendant)
@@ -125,78 +111,38 @@ function riser(t, dur) {
   o.connect(og); og.connect(gMus); o.start(t); o.stop(t + dur + 0.15);
 }
 
-// Voix robotique « NEODRIVE » par synthèse de formants (voyelles ee-oh-ah-ee + consonnes)
-function voixNeodrive(t0) {
-  const dur = 2.5;
-  // Bus voix (sec) branché sur le master → bien en avant
-  const voix = ac.createGain(); voix.gain.value = 1.6; voix.connect(master);
-  // Réverbe/écho pour faire RÉSONNER « drive »
-  const rev = ac.createDelay(0.8); rev.delayTime.value = 0.34;
-  const rfb = ac.createGain(); rfb.gain.value = 0.55;
-  const rlp = ac.createBiquadFilter(); rlp.type = 'lowpass'; rlp.frequency.value = 2600;
-  rev.connect(rlp); rlp.connect(rfb); rfb.connect(rev); rev.connect(master);
-  const wet = ac.createGain(); wet.gain.value = 0.15; wet.connect(rev);
-  // La résonance monte fort sur « DRIVE »
-  wet.gain.setValueAtTime(0.15, t0 + 1.3);
-  wet.gain.linearRampToValueAtTime(0.9, t0 + 1.5);
-
-  const src = ac.createOscillator(); src.type = 'sawtooth';
-  src.frequency.setValueAtTime(148, t0); src.frequency.linearRampToValueAtTime(120, t0 + dur);
-  const src2 = ac.createOscillator(); src2.type = 'sawtooth'; src2.detune.value = -10;
-  src2.frequency.setValueAtTime(148, t0); src2.frequency.linearRampToValueAtTime(120, t0 + dur);
-  const vib = ac.createOscillator(); vib.frequency.value = 5; const vibg = ac.createGain(); vibg.gain.value = 3.5;
-  vib.connect(vibg); vibg.connect(src.frequency); vibg.connect(src2.frequency); vib.start(t0); vib.stop(t0 + dur + 0.05);
-
-  // Enveloppe lente, syllabes bien séparées : NÉ — O — DRIVE
-  const amp = ac.createGain();
-  amp.gain.setValueAtTime(0.0001, t0);
-  amp.gain.linearRampToValueAtTime(0.9, t0 + 0.08);   // NÉ
-  amp.gain.setValueAtTime(0.9, t0 + 0.52);
-  amp.gain.linearRampToValueAtTime(0.1, t0 + 0.62);   // (silence)
-  amp.gain.linearRampToValueAtTime(0.9, t0 + 0.72);   // O
-  amp.gain.setValueAtTime(0.9, t0 + 1.18);
-  amp.gain.linearRampToValueAtTime(0.1, t0 + 1.3);    // (silence avant D)
-  amp.gain.linearRampToValueAtTime(0.9, t0 + 1.42);   // DRIVE (long)
-  amp.gain.setValueAtTime(0.9, t0 + 2.05);
-  amp.gain.linearRampToValueAtTime(0.5, t0 + 2.2);    // V
-  amp.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-
-  const bande = () => { const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 11; return f; };
-  const f1 = bande(), f2 = bande(), f3 = bande();
-  const seq = [                    // [temps, F1, F2, F3] — voyelles tenues puis transitions
-    [t0,        300, 2300, 3000],  // é (NÉ)
-    [t0 + 0.55, 300, 2300, 3000],
-    [t0 + 0.72, 450,  850, 2600],  // o (O)
-    [t0 + 1.20, 450,  850, 2600],
-    [t0 + 1.45, 730, 1090, 2440],  // a (DR-A)
-    [t0 + 1.85, 730, 1090, 2440],
-    [t0 + 2.02, 350, 2200, 2900],  // i (-AÏ)
-    [t0 + 2.2,  300, 1000, 2200],  // v
-  ];
-  [f1, f2, f3].forEach((f, i) => {
-    f.frequency.setValueAtTime(seq[0][i + 1], t0);
-    for (let k = 1; k < seq.length; k++) f.frequency.linearRampToValueAtTime(seq[k][i + 1], seq[k][0]);
-  });
-  const g1 = ac.createGain(), g2 = ac.createGain(), g3 = ac.createGain();
-  g1.gain.value = 1.0; g2.gain.value = 0.9; g3.gain.value = 0.5;
-  [src, src2].forEach(s => { s.connect(f1); s.connect(f2); s.connect(f3); });
-  f1.connect(g1); f2.connect(g2); f3.connect(g3);
-  g1.connect(amp); g2.connect(amp); g3.connect(amp);
-  amp.connect(voix); amp.connect(wet);   // sec + réverbe
-
-  // Consonnes : brefs bruits filtrés (n, d, r, v)
-  const cons = (tt, cut, vol, d, versRev) => {
-    const n = bruit(d); const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = cut; bp.Q.value = 1;
-    const cg = ac.createGain(); cg.gain.setValueAtTime(vol, tt); cg.gain.exponentialRampToValueAtTime(0.001, tt + d);
-    n.connect(bp); bp.connect(cg); cg.connect(voix); if (versRev) cg.connect(wet);
-    n.start(tt); n.stop(tt + d + 0.02);
-  };
-  cons(t0,        1200, 0.18, 0.05);          // n
-  cons(t0 + 1.32, 3200, 0.4, 0.05, true);     // d (dans « drive »)
-  cons(t0 + 1.42, 1800, 0.18, 0.07, true);    // r
-  cons(t0 + 2.2,  2600, 0.28, 0.12, true);    // v
-
-  src.start(t0); src2.start(t0); src.stop(t0 + dur + 0.05); src2.stop(t0 + dur + 0.05);
+// Vraie voix « NEODRIVE » via la synthèse vocale du navigateur (Web Speech API).
+// Prononce « neo … drive », puis un « drive » plus faible en écho.
+let voixTTS = null;
+function chargerVoix() {
+  if (!('speechSynthesis' in window)) return;
+  const vs = window.speechSynthesis.getVoices();
+  voixTTS = vs.find(v => /^en/i.test(v.lang) && /male|david|daniel|alex|fred|google/i.test(v.name))
+         || vs.find(v => /^en/i.test(v.lang))
+         || vs[0] || null;
+}
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  chargerVoix();
+  window.speechSynthesis.onvoiceschanged = chargerVoix;
+}
+function parlerNeodrive() {
+  if (muet || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const dire = (txt, vol, pitch) => {
+      const u = new SpeechSynthesisUtterance(txt);
+      u.lang = 'en-US'; u.rate = 0.7; u.pitch = pitch; u.volume = vol;
+      if (voixTTS) u.voice = voixTTS;
+      return u;
+    };
+    const neo = dire('neo', 1, 0.9);
+    neo.onend = () => {
+      if (muet) return;
+      window.speechSynthesis.speak(dire('drive', 1, 0.9));          // DRIVE
+      setTimeout(() => { if (!muet) window.speechSynthesis.speak(dire('drive', 0.3, 0.8)); }, 520); // écho plus faible
+    };
+    window.speechSynthesis.speak(neo);
+  } catch (e) { /* ignore */ }
 }
 
 // ----- Jeu : progressive / melodic house (esprit deadmau5) -----
