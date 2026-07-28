@@ -12,7 +12,7 @@ import {
 import { reinitialiserPartie, lancerVagueImmediat } from './vagues.js';
 import { clicRejouer, clicLancerVague, clicSon, clicPause, clicMenu } from './ui.js';
 import { ETAT, basculerPause } from './etat.js';
-import { demarrerMusiqueJeu, basculerMuet } from './musique.js';
+import { demarrerMusiqueJeu, basculerMuet, estDemarree } from './musique.js';
 
 function init() {
   const canvas = document.getElementById('jeu');
@@ -61,7 +61,9 @@ function brancherSaisie(canvas) {
   canvas.addEventListener('pointerleave', () => definirSurvol(null, null));
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
+    const premier = !estDemarree();
     demarrerMusiqueJeu();      // démarre la musique du jeu au 1er contact (autoplay)
+    if (premier) { definirSurvol(null, null); return; }  // 1er contact : lance juste le son
     const p = positionSouris(canvas, e);
     definirSurvol(p.x, p.y);   // vise la case sous le doigt/curseur
     gererClic(p.x, p.y);
@@ -70,7 +72,9 @@ function brancherSaisie(canvas) {
 
   // Clavier : 1/2/3 = type · A = améliorer · Espace = lancer la vague · R = rejouer
   window.addEventListener('keydown', e => {
+    const premier = !estDemarree();
     demarrerMusiqueJeu();      // démarre la musique du jeu au 1er appui clavier
+    if (premier && (e.key === 'm' || e.key === 'M')) return;  // 1er « M » : lance le son sans le couper
     if (e.key === 'm' || e.key === 'M') basculerMuet();
     else if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') basculerPause();
     else if (ETAT.pause) return;   // jeu en pause : on ignore le reste

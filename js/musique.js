@@ -5,7 +5,7 @@
 //    · Jeu  : électro énergique en fond (kick, basse, arpège)
 // ============================================================
 let ac = null, master = null, gMus = null, gSfx = null;
-let muet = false;
+let muet = false, demarree = false;
 let timer = null, running = false, piste = null;
 let nextT = 0, step = 0, bpm = 120;
 let continus = [];           // sources continues (drone/nappe) à arrêter
@@ -38,12 +38,10 @@ function limite(nom, ms) {
 }
 
 export function estMuet() { return muet; }
+export function estDemarree() { return demarree; }
 export function basculerMuet() {
   muet = !muet;
   if (master) master.gain.setTargetAtTime(muet ? 0 : 1, ac.currentTime, 0.04);
-  if (muet && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
-  }
   return muet;
 }
 
@@ -55,6 +53,7 @@ export function demarrerMusiqueJeu() { demarrer('jeu'); }
 
 function demarrer(nom) {
   assure(); if (!ac) return;
+  demarree = true;
   if (ac.state === 'suspended') ac.resume();
   if (piste === nom && running) return;
   arreterMusique();
@@ -86,13 +85,12 @@ function planifier() {
   timer = setTimeout(planifier, 25);
 }
 
-// ----- Intro du menu : impact + montée + vraie voix « NEODRIVE » -----
+// ----- Intro du menu : impact + montée -----
 function introMenu() {
   const t = ac.currentTime + 0.05;
   kick(t);
   souffle(0.5, 'lowpass', 1600, 0.5, t);        // impact
   riser(t, 1.6);                                 // montée
-  parlerNeodrive();                              // vraie voix (synthèse vocale du navigateur)
 }
 
 // Montée de tension (bruit filtré + ton ascendant)
@@ -109,40 +107,6 @@ function riser(t, dur) {
   og.gain.setValueAtTime(0.0001, t); og.gain.linearRampToValueAtTime(0.12, t + dur * 0.9);
   og.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.1);
   o.connect(og); og.connect(gMus); o.start(t); o.stop(t + dur + 0.15);
-}
-
-// Vraie voix « NEODRIVE » via la synthèse vocale du navigateur (Web Speech API).
-// Prononce « neo … drive », puis un « drive » plus faible en écho.
-let voixTTS = null;
-function chargerVoix() {
-  if (!('speechSynthesis' in window)) return;
-  const vs = window.speechSynthesis.getVoices();
-  voixTTS = vs.find(v => /^en/i.test(v.lang) && /male|david|daniel|alex|fred|google/i.test(v.name))
-         || vs.find(v => /^en/i.test(v.lang))
-         || vs[0] || null;
-}
-if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  chargerVoix();
-  window.speechSynthesis.onvoiceschanged = chargerVoix;
-}
-function parlerNeodrive() {
-  if (muet || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  try {
-    window.speechSynthesis.cancel();
-    const dire = (txt, vol, pitch) => {
-      const u = new SpeechSynthesisUtterance(txt);
-      u.lang = 'en-US'; u.rate = 0.7; u.pitch = pitch; u.volume = vol;
-      if (voixTTS) u.voice = voixTTS;
-      return u;
-    };
-    const neo = dire('neo', 1, 0.9);
-    neo.onend = () => {
-      if (muet) return;
-      window.speechSynthesis.speak(dire('drive', 1, 0.9));          // DRIVE
-      setTimeout(() => { if (!muet) window.speechSynthesis.speak(dire('drive', 0.3, 0.8)); }, 520); // écho plus faible
-    };
-    window.speechSynthesis.speak(neo);
-  } catch (e) { /* ignore */ }
 }
 
 // ----- Jeu : progressive / melodic house (esprit deadmau5) -----

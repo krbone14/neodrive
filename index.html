@@ -210,19 +210,27 @@
   </script>
 
   <script type="module">
-    import { demarrerMusiqueMenu, basculerMuet, estMuet } from './js/musique.js';
+    import { demarrerMusiqueMenu, basculerMuet, estMuet, estDemarree } from './js/musique.js';
     const btn = document.getElementById('son');
-    // Démarre l'ambiance dès la première interaction (règle d'autoplay)
-    function demarrer() { demarrerMusiqueMenu(); }
-    window.addEventListener('pointerdown', demarrer, { once: true });
-    window.addEventListener('keydown', demarrer, { once: true });
-    // Bouton muet
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      demarrerMusiqueMenu();
-      const m = basculerMuet();
+    function majBtn() {
+      const m = estMuet();
       btn.classList.toggle('muet', m);
       btn.textContent = m ? '♪̷' : '♪';
+    }
+    // Démarre la musique à la 1re interaction "neutre" (pas le bouton son)
+    function demarrerUneFois(e) {
+      if (e && e.target === btn) return;      // le bouton son gère lui-même
+      demarrerMusiqueMenu(); majBtn();
+      window.removeEventListener('pointerdown', demarrerUneFois);
+      window.removeEventListener('keydown', demarrerUneFois);
+    }
+    window.addEventListener('pointerdown', demarrerUneFois);
+    window.addEventListener('keydown', demarrerUneFois);
+    // Bouton son : démarre si pas encore lancé, sinon coupe/réactive
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!estDemarree()) { demarrerMusiqueMenu(); majBtn(); return; }
+      basculerMuet(); majBtn();
     });
   </script>
 </body>
