@@ -55,11 +55,12 @@ function demarrer(nom) {
   if (piste === nom && running) return;
   arreterMusique();
   piste = nom;
-  bpm = nom === 'menu' ? 84 : 128;
-  gMus.gain.setTargetAtTime(nom === 'menu' ? 0.3 : 0.24, ac.currentTime, 0.1);
-  if (nom === 'menu') droneMenu(); else nappeJeu();
+  bpm = nom === 'menu' ? 120 : 128;
+  gMus.gain.setTargetAtTime(nom === 'menu' ? 0.28 : 0.24, ac.currentTime, 0.1);
+  if (nom === 'menu') introMenu(); else nappeJeu();
   running = true;
-  nextT = ac.currentTime + 0.12; step = 0;
+  // la boucle du menu démarre après l'intro (impact + voix), le jeu tout de suite
+  nextT = ac.currentTime + (nom === 'menu' ? 1.9 : 0.12); step = 0;
   planifier();
 }
 
@@ -80,25 +81,100 @@ function planifier() {
   timer = setTimeout(planifier, 25);
 }
 
-// ----- Menu : lent, inquiétant -----
-const ARP_MENU = [60, null, null, 63, null, 67, null, 66, 70, null, null, 67, null, 63, null, 66];
-function pasMenu(s, t) {
-  if (s === 0 || s === 8) subBasse(freq(36), t);
-  if (s === 12) subBasse(freq(34), t);
-  const m = ARP_MENU[s];
-  if (m != null) pincer(freq(m), t, 0.14);
+// ----- Menu : intro électro + boucle entraînante + voix « NEODRIVE » -----
+const BASS_MENU = [43, 43, null, 43, 46, null, 43, null, 41, 41, null, 41, 48, null, 45, null];
+const LEAD_MENU = [67, null, 70, 74, null, 70, 67, 65, null, 67, 70, 72, 74, null, 70, 67];
+function pasMenu(s, t, dur) {
+  if (s % 4 === 0) kick(t);
+  if (s % 2 === 0) hat(t, s % 8 === 4 ? 0.06 : 0.028);
+  const b = BASS_MENU[s]; if (b != null) bassJeu(freq(b), t, dur * 1.7);
+  const l = LEAD_MENU[s]; if (l != null) leadJeu(freq(l), t);
 }
-function droneMenu() {
-  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 380; lp.Q.value = 6;
-  const dg = ac.createGain(); dg.gain.value = 0.09; lp.connect(dg); dg.connect(gMus);
-  [36, 43, 42].forEach((m, i) => {              // do, sol, fa# (triton)
+
+// Séquence d'ouverture : impact + montée + voix, puis nappe continue
+function introMenu() {
+  const t = ac.currentTime + 0.05;
+  kick(t);
+  souffle(0.5, 'lowpass', 1600, 0.5, t);        // impact
+  riser(t, 1.2);                                 // montée
+  voixNeodrive(t + 1.0);                          // « NEODRIVE » au sommet
+  // Nappe continue (la mineur) sous la boucle
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1100;
+  const g = ac.createGain(); g.gain.value = 0.05; lp.connect(g); g.connect(gMus);
+  [43, 50, 55].forEach((m, i) => {
     const o = ac.createOscillator(); o.type = 'sawtooth';
-    o.frequency.value = freq(m); o.detune.value = (i - 1) * 6;
+    o.frequency.value = freq(m); o.detune.value = (i - 1) * 5;
     o.connect(lp); o.start(); continus.push(o);
   });
-  const lfo = ac.createOscillator(); lfo.frequency.value = 0.06;
-  const lg = ac.createGain(); lg.gain.value = 180;
-  lfo.connect(lg); lg.connect(lp.frequency); lfo.start(); continus.push(lfo);
+}
+
+// Montée de tension (bruit filtré + ton ascendant)
+function riser(t, dur) {
+  const s = bruit(dur); const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1;
+  bp.frequency.setValueAtTime(300, t); bp.frequency.exponentialRampToValueAtTime(6000, t + dur);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.3, t + dur * 0.9);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.15);
+  s.connect(bp); bp.connect(g); g.connect(gMus); s.start(t); s.stop(t + dur + 0.2);
+  const o = ac.createOscillator(); o.type = 'sawtooth';
+  o.frequency.setValueAtTime(200, t); o.frequency.exponentialRampToValueAtTime(900, t + dur);
+  const og = ac.createGain();
+  og.gain.setValueAtTime(0.0001, t); og.gain.linearRampToValueAtTime(0.12, t + dur * 0.9);
+  og.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.1);
+  o.connect(og); og.connect(gMus); o.start(t); o.stop(t + dur + 0.15);
+}
+
+// Voix robotique « NEODRIVE » par synthèse de formants (voyelles ee-oh-ah-ee + consonnes)
+function voixNeodrive(t0) {
+  const dur = 1.25;
+  const src = ac.createOscillator(); src.type = 'sawtooth';
+  src.frequency.setValueAtTime(140, t0); src.frequency.linearRampToValueAtTime(110, t0 + dur);
+  const src2 = ac.createOscillator(); src2.type = 'sawtooth'; src2.detune.value = -8;
+  src2.frequency.setValueAtTime(140, t0); src2.frequency.linearRampToValueAtTime(110, t0 + dur);
+
+  const amp = ac.createGain();
+  amp.gain.setValueAtTime(0.0001, t0);
+  amp.gain.linearRampToValueAtTime(0.5, t0 + 0.06);   // NEE
+  amp.gain.setValueAtTime(0.5, t0 + 0.5);             // OH
+  amp.gain.linearRampToValueAtTime(0.12, t0 + 0.56);  // D (coupure)
+  amp.gain.linearRampToValueAtTime(0.5, t0 + 0.66);   // dr-AH
+  amp.gain.setValueAtTime(0.5, t0 + 1.0);             // -AI
+  amp.gain.linearRampToValueAtTime(0.15, t0 + 1.08);  // V (coupure)
+  amp.gain.linearRampToValueAtTime(0.4, t0 + 1.14);
+  amp.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+
+  const bande = () => { const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 8; return f; };
+  const f1 = bande(), f2 = bande(), f3 = bande();
+  const seq = [                 // [temps, F1, F2, F3] pour chaque voyelle
+    [t0,        300, 2200, 3000],  // ee
+    [t0 + 0.30, 400,  900, 2600],  // oh
+    [t0 + 0.62, 730, 1090, 2440],  // ah
+    [t0 + 0.85, 350, 2100, 2900],  // ee (glide de « drive »)
+    [t0 + 1.1,  300, 1000, 2200],  // v
+  ];
+  [f1, f2, f3].forEach((f, i) => {
+    f.frequency.setValueAtTime(seq[0][i + 1], t0);
+    for (let k = 1; k < seq.length; k++) f.frequency.linearRampToValueAtTime(seq[k][i + 1], seq[k][0]);
+  });
+  const g1 = ac.createGain(), g2 = ac.createGain(), g3 = ac.createGain();
+  g1.gain.value = 0.9; g2.gain.value = 0.7; g3.gain.value = 0.4;
+  [src, src2].forEach(s => { s.connect(f1); s.connect(f2); s.connect(f3); });
+  f1.connect(g1); f2.connect(g2); f3.connect(g3);
+  g1.connect(amp); g2.connect(amp); g3.connect(amp);
+  amp.connect(gMus);
+
+  // Consonnes : brefs bruits filtrés (n, d, r, v)
+  const cons = (tt, cut, vol, d) => {
+    const n = bruit(d); const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = cut; bp.Q.value = 1;
+    const cg = ac.createGain(); cg.gain.setValueAtTime(vol, tt); cg.gain.exponentialRampToValueAtTime(0.001, tt + d);
+    n.connect(bp); bp.connect(cg); cg.connect(gMus); n.start(tt); n.stop(tt + d + 0.02);
+  };
+  cons(t0,        1200, 0.12, 0.05);  // n
+  cons(t0 + 0.56, 3000, 0.25, 0.04);  // d
+  cons(t0 + 0.66, 1800, 0.12, 0.06);  // r
+  cons(t0 + 1.08, 2500, 0.18, 0.09);  // v
+
+  src.start(t0); src2.start(t0); src.stop(t0 + dur + 0.05); src2.stop(t0 + dur + 0.05);
 }
 
 // ----- Jeu : électro énergique -----
