@@ -1,7 +1,7 @@
 // ============================================================
 //  sw.js — service worker : mise en cache pour jouer hors ligne
 // ============================================================
-const CACHE = 'neodrive-v1';
+const CACHE = 'neodrive-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -41,14 +41,18 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Requêtes : cache d'abord, puis réseau (et on met en cache au passage)
+// Requêtes : « stale-while-revalidate »
+// → on sert vite depuis le cache ET on récupère la nouvelle version en fond
+//   (mise à jour automatique au prochain lancement), avec repli hors ligne.
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(rep => rep || fetch(e.request).then(net => {
-      const copie = net.clone();
-      caches.open(CACHE).then(c => c.put(e.request, copie)).catch(() => {});
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(e.request);
+    const reseau = fetch(e.request).then(net => {
+      if (net && net.status === 200) cache.put(e.request, net.clone());
       return net;
-    }).catch(() => caches.match('./index.html')))
-  );
+    }).catch(() => null);
+    return cached || (await reseau) || cache.match('./index.html');
+  })());
 });

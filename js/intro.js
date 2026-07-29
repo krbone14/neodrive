@@ -25,41 +25,10 @@ const SEGMENTS = [
 let cv, ctx, sub, etoiles = [];
 let idx = 0, sceneNum = 1, sceneT0 = 0, animId = 0, fini = false;
 
-// ----- Voix : homme français (grave, lent, fluide) + voix anglaise pour « Neodrive » -----
-let voixFr = null, voixEn = null;
-function chargerVoix() {
-  if (!('speechSynthesis' in window)) return;
-  const vs = window.speechSynthesis.getVoices();
-  const fr = vs.filter(v => /^fr/i.test(v.lang));
-  voixFr = fr.find(v => /thomas|paul|nicolas|guillaume|henri|mathieu|claude|r[eé]my|male|homme|man/i.test(v.name))
-        || fr.find(v => /fr[-_]?FR/i.test(v.lang)) || fr[0] || null;
-  const en = vs.filter(v => /^en/i.test(v.lang));
-  voixEn = en.find(v => /daniel|david|george|james|alex|fred|male|man|guy/i.test(v.name)) || en[0] || null;
-}
-if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  chargerVoix();
-  window.speechSynthesis.onvoiceschanged = chargerVoix;
-}
-function parler(texte, onend, opts = {}) {
-  let dit = false;
-  const done = () => { if (dit) return; dit = true; onend && onend(); };
-  if ('speechSynthesis' in window) {
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(texte);
-      u.voice = opts.voice || voixFr || null;
-      u.lang = opts.lang || 'fr-FR';
-      u.rate = opts.rate || 0.78;    // lent, imposant
-      u.pitch = opts.pitch != null ? opts.pitch : 0;     // le plus grave possible
-      u.volume = opts.volume != null ? opts.volume : 1;
-      u.onend = done; u.onerror = done;
-      window.speechSynthesis.speak(u);
-    } catch (e) { /* le minuteur de secours prend le relais */ }
-  }
-  if (onend) {
-    const secs = Math.max(2.6, texte.length * 0.075);
-    setTimeout(done, secs * 1000 + 800);
-  }
+// Intro sans voix : la cadence suit la lecture des sous-titres
+function attendre(texte, onend) {
+  const secs = Math.max(2.8, texte.length * 0.07);
+  setTimeout(onend, secs * 1000);
 }
 
 // ----- Lancement -----
@@ -93,7 +62,7 @@ function jouerSegment(k) {
   sceneT0 = performance.now();
   sub.textContent = SEGMENTS[k].texte;
   indicesSfx(sceneNum);
-  parler(SEGMENTS[k].dit || SEGMENTS[k].texte, () => {
+  attendre(SEGMENTS[k].texte, () => {
     if (idx !== k || fini) return;
     if (k >= SEGMENTS.length - 1) finale();
     else jouerSegment(k + 1);
@@ -110,10 +79,9 @@ function indicesSfx(scene) {
 function finale() {
   sceneNum = 7; sceneT0 = performance.now();
   sub.textContent = '';
-  // « NEODRIVE » prononcé en anglais (sans écho), puis la musique prend le relais
-  parler('Neo drive', null, { lang: 'en-US', voice: voixEn || voixFr, pitch: 0, rate: 0.78 });
-  setTimeout(() => demarrerMusiqueMenu(), 1500);
-  setTimeout(allerAuJeu, 4200);
+  // La musique prend le relais, puis on lance le jeu
+  demarrerMusiqueMenu();
+  setTimeout(allerAuJeu, 3600);
 }
 
 function allerAuJeu() {
