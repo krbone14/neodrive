@@ -148,6 +148,49 @@
       color: rgba(234, 252, 255, 0.4);
       box-shadow: none;
     }
+
+    /* ----- Intro cinématique ----- */
+    #intro {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: #05010f;
+      display: none;
+    }
+    #cintro { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #soustitre {
+      position: absolute;
+      left: 50%;
+      bottom: 8%;
+      transform: translateX(-50%);
+      width: min(90%, 900px);
+      text-align: center;
+      font-size: clamp(15px, 3.4vw, 22px);
+      line-height: 1.5;
+      color: #eafcff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+      padding: 14px 20px;
+      background: rgba(5, 1, 15, 0.55);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      backdrop-filter: blur(2px);
+    }
+    #passer {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 21;
+      padding: 10px 20px;
+      border: 1.5px solid #ff00c8;
+      border-radius: 8px;
+      background: rgba(255, 0, 200, 0.12);
+      color: #ff00c8;
+      font-size: clamp(13px, 3.4vw, 15px);
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(255, 0, 200, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -164,10 +207,16 @@
       <span class="chip"><b>10 vagues</b> · 1 boss</span>
     </div>
 
-    <a class="commencer" href="jeu.html">▶ COMMENCER</a>
+    <a class="commencer" id="commencer" href="jeu.html">▶ COMMENCER</a>
 
     <p class="signature">un jeu de <b>Florian Lorilloux</b></p>
   </main>
+
+  <div id="intro">
+    <canvas id="cintro"></canvas>
+    <div id="soustitre"></div>
+    <button id="passer">PASSER ▸</button>
+  </div>
 
   <script>
     // Champ d'étoiles en parallaxe (léger)
@@ -211,15 +260,17 @@
 
   <script type="module">
     import { demarrerMusiqueMenu, basculerMuet, estMuet, estDemarree } from './js/musique.js';
+    import { lancerIntro } from './js/intro.js';
     const btn = document.getElementById('son');
+    const commencer = document.getElementById('commencer');
     function majBtn() {
       const m = estMuet();
       btn.classList.toggle('muet', m);
       btn.textContent = m ? '♪̷' : '♪';
     }
-    // Démarre la musique à la 1re interaction "neutre" (pas le bouton son)
+    // Démarre la musique du menu à la 1re interaction "neutre"
     function demarrerUneFois(e) {
-      if (e && e.target === btn) return;      // le bouton son gère lui-même
+      if (e && e.target && (e.target === btn || e.target.closest('#commencer'))) return;
       demarrerMusiqueMenu(); majBtn();
       window.removeEventListener('pointerdown', demarrerUneFois);
       window.removeEventListener('keydown', demarrerUneFois);
@@ -231,6 +282,11 @@
       e.stopPropagation();
       if (!estDemarree()) { demarrerMusiqueMenu(); majBtn(); return; }
       basculerMuet(); majBtn();
+    });
+    // COMMENCER : lance la cinématique d'intro (puis le jeu)
+    commencer.addEventListener('click', e => {
+      e.preventDefault();
+      lancerIntro();
     });
   </script>
 </body>

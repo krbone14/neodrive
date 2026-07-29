@@ -39,6 +39,11 @@ function limite(nom, ms) {
 
 export function estMuet() { return muet; }
 export function estDemarree() { return demarree; }
+// Débloque le contexte audio dans un geste utilisateur (sans jouer de son)
+export function debloquerAudio() {
+  assure();
+  if (ac) { demarree = true; if (ac.state === 'suspended') ac.resume(); }
+}
 export function basculerMuet() {
   muet = !muet;
   if (master) master.gain.setTargetAtTime(muet ? 0 : 1, ac.currentTime, 0.04);
