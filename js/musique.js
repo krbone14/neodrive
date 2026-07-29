@@ -59,7 +59,7 @@ function demarrer(nom) {
   arreterMusique();
   piste = nom;
   bpm = nom === 'menu' ? 120 : 126;
-  gMus.gain.setTargetAtTime(0.4, ac.currentTime, 0.1);
+  gMus.gain.setTargetAtTime(0.55, ac.currentTime, 0.1);
   setupJeu();                       // même musique house pour le menu et le jeu
   if (nom === 'menu') introMenu();  // + intro (impact, montée, vraie voix)
   running = true;
