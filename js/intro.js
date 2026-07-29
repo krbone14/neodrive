@@ -18,22 +18,27 @@ const SEGMENTS = [
   { scene: 4, texte: "Nous avons réussi à la transformer en tourelles, redoutables contre l'ennemi." },
   { scene: 5, texte: "Mais malheureusement, nous n'en avons pas assez." },
   { scene: 6, texte: "C'est pourquoi nous avons fait appel à vous. Avec ces armes, anéantissez l'ennemi." },
-  { scene: 7, texte: "Vous êtes le dernier espoir de l'humanité. Vous êtes l'équipe Neodrive." },
+  { scene: 7, texte: "Vous êtes le dernier espoir de l'humanité. Vous êtes l'équipe Neodrive.",
+    dit: "Vous êtes le dernier espoir de l'humanité. Vous êtes l'équipe" },   // « Neodrive » dit en anglais dans la finale
 ];
 
 let cv, ctx, sub, etoiles = [];
 let idx = 0, sceneNum = 1, sceneT0 = 0, animId = 0, fini = false;
 
-// ----- Voix (français, grave, lente) -----
-let voixFr = null;
-function chargerVoixFr() {
+// ----- Voix : homme français (grave, lent, fluide) + voix anglaise pour « Neodrive » -----
+let voixFr = null, voixEn = null;
+function chargerVoix() {
   if (!('speechSynthesis' in window)) return;
   const vs = window.speechSynthesis.getVoices();
-  voixFr = vs.find(v => /fr[-_]?FR/i.test(v.lang)) || vs.find(v => /^fr/i.test(v.lang)) || null;
+  const fr = vs.filter(v => /^fr/i.test(v.lang));
+  voixFr = fr.find(v => /thomas|paul|nicolas|guillaume|henri|mathieu|claude|r[eé]my|male|homme|man/i.test(v.name))
+        || fr.find(v => /fr[-_]?FR/i.test(v.lang)) || fr[0] || null;
+  const en = vs.filter(v => /^en/i.test(v.lang));
+  voixEn = en.find(v => /daniel|david|george|james|alex|fred|male|man|guy/i.test(v.name)) || en[0] || null;
 }
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  chargerVoixFr();
-  window.speechSynthesis.onvoiceschanged = chargerVoixFr;
+  chargerVoix();
+  window.speechSynthesis.onvoiceschanged = chargerVoix;
 }
 function parler(texte, onend, opts = {}) {
   let dit = false;
@@ -42,10 +47,10 @@ function parler(texte, onend, opts = {}) {
     try {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(texte);
-      if (voixFr) u.voice = voixFr;
-      u.lang = 'fr-FR';
-      u.rate = opts.rate || 0.82;    // lent
-      u.pitch = opts.pitch || 0.4;   // grave
+      u.voice = opts.voice || voixFr || null;
+      u.lang = opts.lang || 'fr-FR';
+      u.rate = opts.rate || 0.85;    // lent mais fluide
+      u.pitch = opts.pitch != null ? opts.pitch : 0.65;  // grave (homme), sans casser la fluidité
       u.volume = opts.volume != null ? opts.volume : 1;
       u.onend = done; u.onerror = done;
       window.speechSynthesis.speak(u);
@@ -88,7 +93,7 @@ function jouerSegment(k) {
   sceneT0 = performance.now();
   sub.textContent = SEGMENTS[k].texte;
   indicesSfx(sceneNum);
-  parler(SEGMENTS[k].texte, () => {
+  parler(SEGMENTS[k].dit || SEGMENTS[k].texte, () => {
     if (idx !== k || fini) return;
     if (k >= SEGMENTS.length - 1) finale();
     else jouerSegment(k + 1);
@@ -105,10 +110,9 @@ function indicesSfx(scene) {
 function finale() {
   sceneNum = 7; sceneT0 = performance.now();
   sub.textContent = '';
-  // « NEODRIVE » en écho, puis la musique prend le relais
-  parler('Neodrive', null);
-  setTimeout(() => parler('Neodrive', null, { volume: 0.4, pitch: 0.35 }), 700);
-  setTimeout(() => demarrerMusiqueMenu(), 900);
+  // « NEODRIVE » prononcé en anglais (sans écho), puis la musique prend le relais
+  parler('Neo drive', null, { lang: 'en-US', voice: voixEn || voixFr, pitch: 0.6, rate: 0.85 });
+  setTimeout(() => demarrerMusiqueMenu(), 1500);
   setTimeout(allerAuJeu, 4200);
 }
 
