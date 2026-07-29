@@ -60,6 +60,28 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Overlay « tourne ton téléphone » (affiché en portrait sur tactile) */
+#rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #05010f;
+  color: #eafcff;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(20px, 6vw, 32px);
+  font-weight: 700;
+  line-height: 1.8;
+  letter-spacing: 1px;
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+  padding: 24px;
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate { display: flex; }
+}
+
 /* Petits écrans / tactile : on masque le titre pour donner tout l'espace au jeu */
 @media (max-width: 820px), (pointer: coarse) {
   #titre { display: none; }
