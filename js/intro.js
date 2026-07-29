@@ -12,7 +12,7 @@ const P = { cyan: '#00f0ff', magenta: '#ff00c8', violet: '#a020f0', or: '#ffd700
 
 // Chaque segment : une scène animée + le texte dit par le général
 const SEGMENTS = [
-  { scene: 1, texte: "Nous sommes en l'an 2567. Sur la Terre, un vortex est apparu aux alentours de la Lune." },
+  { scene: 1, texte: "Nous sommes en l'an 2567. Un vortex est apparu aux alentours de la Lune." },
   { scene: 2, texte: "Une flotte de vaisseaux en est sortie pour attaquer la Terre. Nous étions perdus." },
   { scene: 3, texte: "Mais nous avons découvert une pierre puissante. Nous l'avons baptisée la Néo." },
   { scene: 4, texte: "Nous avons réussi à la transformer en tourelles, redoutables contre l'ennemi." },
@@ -49,8 +49,8 @@ function parler(texte, onend, opts = {}) {
       const u = new SpeechSynthesisUtterance(texte);
       u.voice = opts.voice || voixFr || null;
       u.lang = opts.lang || 'fr-FR';
-      u.rate = opts.rate || 0.85;    // lent mais fluide
-      u.pitch = opts.pitch != null ? opts.pitch : 0.65;  // grave (homme), sans casser la fluidité
+      u.rate = opts.rate || 0.86;    // fluide
+      u.pitch = opts.pitch != null ? opts.pitch : 0.2;   // très très grave
       u.volume = opts.volume != null ? opts.volume : 1;
       u.onend = done; u.onerror = done;
       window.speechSynthesis.speak(u);
@@ -111,7 +111,7 @@ function finale() {
   sceneNum = 7; sceneT0 = performance.now();
   sub.textContent = '';
   // « NEODRIVE » prononcé en anglais (sans écho), puis la musique prend le relais
-  parler('Neo drive', null, { lang: 'en-US', voice: voixEn || voixFr, pitch: 0.6, rate: 0.85 });
+  parler('Neo drive', null, { lang: 'en-US', voice: voixEn || voixFr, pitch: 0.2, rate: 0.86 });
   setTimeout(() => demarrerMusiqueMenu(), 1500);
   setTimeout(allerAuJeu, 4200);
 }
