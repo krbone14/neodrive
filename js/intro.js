@@ -49,8 +49,8 @@ function parler(texte, onend, opts = {}) {
       const u = new SpeechSynthesisUtterance(texte);
       u.voice = opts.voice || voixFr || null;
       u.lang = opts.lang || 'fr-FR';
-      u.rate = opts.rate || 0.86;    // fluide
-      u.pitch = opts.pitch != null ? opts.pitch : 0.2;   // très très grave
+      u.rate = opts.rate || 0.8;     // posé, sérieux
+      u.pitch = opts.pitch != null ? opts.pitch : 0.5;   // grave
       u.volume = opts.volume != null ? opts.volume : 1;
       u.onend = done; u.onerror = done;
       window.speechSynthesis.speak(u);
@@ -111,7 +111,7 @@ function finale() {
   sceneNum = 7; sceneT0 = performance.now();
   sub.textContent = '';
   // « NEODRIVE » prononcé en anglais (sans écho), puis la musique prend le relais
-  parler('Neo drive', null, { lang: 'en-US', voice: voixEn || voixFr, pitch: 0.2, rate: 0.86 });
+  parler('Neo drive', null, { lang: 'en-US', voice: voixEn || voixFr, pitch: 0.5, rate: 0.8 });
   setTimeout(() => demarrerMusiqueMenu(), 1500);
   setTimeout(allerAuJeu, 4200);
 }
