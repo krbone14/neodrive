@@ -1,7 +1,7 @@
 // ============================================================
 //  sw.js — service worker : mise en cache pour jouer hors ligne
 // ============================================================
-const CACHE = 'neodrive-v2';
+const CACHE = 'neodrive-v3';
 const ASSETS = [
   './',
   './index.html',

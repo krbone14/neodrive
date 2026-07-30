@@ -33,8 +33,8 @@ function attendre(texte, onend) {
 
 // ----- Lancement -----
 export function lancerIntro() {
-  debloquerAudio();      // dans le geste du clic : débloque le son pour la suite
-  arreterMusique();      // silence : la voix au premier plan
+  debloquerAudio();          // dans le geste du clic : débloque le son
+  demarrerMusiqueMenu();     // musique pendant toute l'intro
   const ov = document.getElementById('intro');
   ov.style.display = 'block';
   cv = document.getElementById('cintro');

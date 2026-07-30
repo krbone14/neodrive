@@ -502,9 +502,12 @@ export function dessinerTirs(ctx) {
 function dessinerCasesInterdites(ctx) {
   const T = GRILLE.tailleCase;
   ctx.save();
-  ctx.fillStyle = 'rgba(255, 40, 70, 0.11)';
   for (const { col, rang } of casesInterdites()) {
+    ctx.fillStyle = 'rgba(255, 30, 60, 0.22)';
     ctx.fillRect(col * T, rang * T, T, T);
+    ctx.strokeStyle = 'rgba(255, 40, 80, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(col * T + 0.5, rang * T + 0.5, T - 1, T - 1);
   }
   ctx.restore();
 }

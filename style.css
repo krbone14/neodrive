@@ -8,6 +8,7 @@ html, body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;   /* pas de pull-to-refresh sur mobile */
+  background: #05010f;         /* évite les bords blancs (zones sûres / letterbox) en PWA */
 }
 
 body {
